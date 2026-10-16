@@ -1,6 +1,7 @@
 ## Naive Bayes using NLTK
+import os
+
 from nltk import FreqDist, ConditionalFreqDist
-from nltk.corpus import movie_reviews
 from nltk.corpus import stopwords
 from math import log
 from filters import *
@@ -8,8 +9,8 @@ from filters import *
 
 ## assume the training set is:
 ## a dictionary mapping category names to lists of files.
-## e.g. t = {'pos' : ['pos/cv999_13106.txt', 'pos/cv998_14111.txt',...] ,
-##           'neg' : ['neg/cv371_8197.txt', 'neg/cv374_26455.txt'] }
+## e.g. t = {'spam' : ['spam/00012.381e4f512915109ba1e0853a7a8407b2', ...]
+##           'easy_ham' : ['easy_ham/00011.fbcde1b4833bdbaaf0ced723edd6e355',  }
 ## Construct a ConditionalFrequencyDistribution that maps categories onto distributions.
 
 ## This should just work. You're welcome to adapt it if you'd like.
@@ -19,7 +20,14 @@ def train(training_set) :
     for category in training_set :
         files = training_set[category]
         for name in files :
-            word_list = apply_transforms(transforms,select_features(filters, movie_reviews.words(name)))
+            print(name)
+            try :
+                word_list = apply_transforms(transforms,
+                                         select_features(filters,
+                                                         open(name).read().split(' ')))
+            except :
+                print("Unable to read " + name)
+                continue
             for word in word_list :
                 model[category][word] += 1
     return model
@@ -33,17 +41,23 @@ def classify(model, list_of_tokens) :
     filtered_tokens = apply_transforms(transforms, select_features(filters, list_of_tokens))
     categories = list(model.keys())
     results = {}
-    ## you do the rest!
 
-
+    for c in categories:
+        log_likelihood = 0
+        for t in filtered_tokens:
+            if t in model[c]:
+                log_likelihood += (model[c][t] / model[c].N())
+            else:
+                log_likelihood += (1 / model[c].N())
+        results[c] = log_likelihood
     return results
 
-## You will need to extend this to do five-fold cross-validation, and also compute accuracy.
+
 if __name__ == "__main__" :
-    fileids = movie_reviews.fileids()
-    pos = [item for item in fileids if item.startswith('pos')]
-    neg = [item for item in fileids if item.startswith('neg')]
-    tset = {'pos' : pos, 'neg' : neg}
+
+    spam = ['./spam/' + item for item in os.listdir('./spam')]
+    ham = ['./easy_ham/' + item for item in os.listdir('./easy_ham')]
+
     model = train(tset)
 
     for fileid in fileids :
