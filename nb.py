@@ -1,5 +1,5 @@
 ## Naive Bayes using NLTK
-import os
+import os, math
 
 from nltk import FreqDist, ConditionalFreqDist
 from nltk.corpus import stopwords
@@ -46,9 +46,9 @@ def classify(model, list_of_tokens) :
         log_likelihood = 0
         for t in filtered_tokens:
             if t in model[c]:
-                log_likelihood += (model[c][t] / model[c].N())
+                log_likelihood += math.log2(model[c][t] / model[c].N())
             else:
-                log_likelihood += (1 / model[c].N())
+                log_likelihood += math.log2(1 / model[c].N())
         results[c] = log_likelihood
     return results
 
